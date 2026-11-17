@@ -1,0 +1,11 @@
+{
+  "name": "figma-type-warp-dan",
+  "version": "5.2.0",
+  "private": false,
+  "description": "A Figma plugin for converting text to editable vector type and applying warp effects.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/test-harness.js",
+    "check": "node --check code.js"
+  }
+}

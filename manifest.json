@@ -1,0 +1,13 @@
+{
+  "name": "字体变形-丹",
+  "id": "000000000000000000",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "relaunchButtons": [
+    { "command": "open", "name": "打开字体变形-丹" }
+  ],
+  "networkAccess": { "allowedDomains": ["none"] }
+}

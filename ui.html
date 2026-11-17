@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      font-family: Inter, "Microsoft YaHei", sans-serif;
+      color: #202124;
+      background: #f7f8fa;
+    }
+    * { box-sizing: border-box; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; }
+    body { font-size:13px; }
+    .app { height:100vh; display:flex; flex-direction:column; background:#f7f8fa; }
+    .titlebar {
+      height:58px; flex:0 0 58px; display:flex; align-items:center; gap:11px;
+      padding:0 19px; background:#fff; border-bottom:1px solid #e3e5e8;
+    }
+    .brand-mark { width:27px; height:27px; border-radius:8px; display:grid; place-items:center; color:white; background:#3482f6; font-weight:800; font-size:14px; }
+    .brand-name { font-size:14px; font-weight:700; }
+    .brand-sub { margin-left:auto; color:#858b95; font-size:10px; letter-spacing:1.3px; }
+    .layout { display:grid; grid-template-columns:minmax(0, 1fr) 370px; min-height:0; flex:1; }
+    .preview-pane { min-width:0; padding:16px 18px 16px 20px; display:flex; flex-direction:column; }
+    .preview-header { height:37px; flex:0 0 37px; display:flex; align-items:flex-start; justify-content:space-between; }
+    .preview-title { font-size:13px; font-weight:700; }
+    .live-tag { display:flex; align-items:center; gap:6px; color:#258354; font-size:11px; }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:#37b87a; box-shadow:0 0 0 3px #e5f6ed; }
+    .stage {
+      position:relative; flex:1; min-height:0; overflow:hidden; border:1px solid #d8dbe0; border-radius:13px;
+      background-color:#f5f6f7;
+      background-image:linear-gradient(45deg,#e8eaed 25%,transparent 25%),linear-gradient(-45deg,#e8eaed 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e8eaed 75%),linear-gradient(-45deg,transparent 75%,#e8eaed 75%);
+      background-size:24px 24px;
+      background-position:0 0,0 12px,12px -12px,-12px 0;
+      box-shadow:0 1px 3px rgba(0,0,0,.04) inset;
+    }
+    .stage svg { width:100%; height:100%; display:block; touch-action:none; }
+    .empty-state { position:absolute; inset:0; display:grid; place-content:center; text-align:center; color:#8b9098; gap:8px; pointer-events:none; }
+    .empty-icon { margin:auto; width:42px; height:42px; border:1px solid #d5d9df; border-radius:12px; display:grid; place-items:center; background:#fff; color:#758091; font-size:19px; }
+    .empty-state strong { color:#525861; font-size:13px; font-weight:600; }
+    .empty-state small { font-size:11px; }
+    .stage-hint { height:32px; flex:0 0 32px; display:flex; align-items:flex-end; justify-content:space-between; color:#777e88; font-size:11px; }
+    .stage-hint span:last-child { color:#9aa0a9; }
+    .selection-box { fill:none; stroke:#4387f5; stroke-width:1.5; stroke-dasharray:5 4; vector-effect:non-scaling-stroke; }
+    #shapeGroup, #selectionBox { pointer-events:none; }
+    .corner-handle { fill:#fff; stroke:#3482f6; stroke-width:2.5; cursor:grab; vector-effect:non-scaling-stroke; pointer-events:all; }
+    .corner-handle:hover { fill:#eaf3ff; }
+    .corner-handle.dragging { cursor:grabbing; fill:#eaf3ff; }
+    .right-panel { min-height:0; overflow-y:auto; background:#fff; border-left:1px solid #e1e3e6; padding:17px 18px 15px; display:flex; flex-direction:column; }
+    .right-panel::-webkit-scrollbar { width:8px; }
+    .right-panel::-webkit-scrollbar-thumb { background:#d9dce1; border-radius:6px; }
+    .panel-brand { display:flex; gap:12px; align-items:center; padding:0 0 14px; border-bottom:1px solid #e6e8eb; }
+    .panel-logo { width:39px; height:39px; border-radius:12px; color:white; background:#3d7df3; display:grid; place-items:center; font-size:18px; font-weight:800; }
+    h1 { margin:0; font-size:19px; line-height:1.25; }
+    .subtitle { margin-top:3px; color:#868b94; letter-spacing:1.4px; font-size:10px; }
+    .selection-status { margin:13px 0 15px; padding:10px 11px; min-height:38px; background:#f0f6ff; color:#2770df; border-radius:9px; line-height:1.4; font-size:12px; }
+    .selection-status.invalid { color:#767c86; background:#f3f4f6; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; margin:2px 0 9px; }
+    .section-head strong { font-size:13px; }
+    .section-head small { color:#8b9098; font-size:10px; }
+    .preset-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+    .preset {
+      height:70px; border:1px solid #e2e4e8; border-radius:10px; background:#fff; color:#272a30;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+      cursor:pointer; font:inherit; transition:background .12s,border-color .12s;
+    }
+    .preset:hover { border-color:#9bc3ff; background:#f8fbff; }
+    .preset.active { border:1.5px solid #4387f5; color:#236fdf; background:#eef5ff; }
+    .preset svg { width:43px; height:34px; overflow:visible; }
+    .preset span { font-size:11px; }
+    .curve-editor { display:none; margin-top:10px; border:1px solid #e1e3e7; border-radius:10px; padding:9px 10px 7px; background:#f8f9fa; }
+    .curve-editor.show { display:block; }
+    .curve-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+    .curve-head strong { font-size:12px; }
+    .curve-head small { color:#8c929b; font-size:10px; }
+    #curveSvg { width:100%; height:88px; display:block; touch-action:none; user-select:none; }
+    .guide { stroke:#cfd5de; stroke-width:1; stroke-dasharray:3 4; }
+    .curve-path { fill:none; stroke:#3c82f6; stroke-width:3; stroke-linecap:round; }
+    .curve-handle { fill:#fff; stroke:#3c82f6; stroke-width:2.5; cursor:ns-resize; pointer-events:all; }
+    .curve-handle.dragging { fill:#eaf3ff; }
+    .controls { border-top:1px solid #e8eaed; margin-top:15px; padding-top:13px; }
+    .control-line { display:grid; grid-template-columns:60px minmax(0,1fr) 40px; align-items:center; gap:9px; margin:10px 0 13px; }
+    .control-line label, .stroke-line > label { color:#747b85; }
+    input[type=range] { width:100%; accent-color:#3d82f6; }
+    .num { text-align:right; color:#777e88; font-variant-numeric:tabular-nums; }
+    .checks { display:flex; gap:8px; margin:10px 0 13px; }
+    .check { display:flex; align-items:center; gap:7px; cursor:pointer; color:#363a40; font-size:12px; }
+    .check input { width:15px; height:15px; margin:0; accent-color:#3d82f6; }
+    .stroke-line { display:grid; grid-template-columns:60px 1fr 34px; align-items:center; gap:9px; margin:8px 0 12px; }
+    .stroke-line input[type=number] { height:31px; width:100%; border:1px solid #dedfe3; border-radius:7px; padding:0 8px; font:inherit; color:#34383e; }
+    .stroke-line input[type=color] { width:31px; height:29px; padding:2px; border:1px solid #dedfe3; border-radius:6px; background:#fff; }
+    .hide-original { margin:3px 0 13px; }
+    .divider { height:1px; background:#e6e8eb; margin:7px 0 12px; }
+    .status { min-height:27px; color:#858a92; font-size:11px; line-height:1.4; }
+    .status.error { color:#c83b37; }
+    .status.success { color:#16804c; }
+    .export-button { height:42px; width:100%; border:0; border-radius:9px; background:#3d7df3; color:#fff; font:600 13px Inter,"Microsoft YaHei",sans-serif; cursor:pointer; }
+    .export-button:hover:not(:disabled) { background:#2b6fe8; }
+    .export-button:disabled { background:#d9dadd; color:#8f9297; cursor:not-allowed; }
+    .footnote { margin-top:7px; text-align:center; color:#9a9ea5; font-size:10px; }
+    .reset { border:0; color:#397ce9; background:transparent; font:inherit; font-size:10px; cursor:pointer; padding:0; }
+    .reset-button { width:100%; height:34px; margin:8px 0 0; border:1px solid #cfe0ff; border-radius:8px; color:#2c72df; background:#f7faff; font:600 12px Inter,"Microsoft YaHei",sans-serif; cursor:pointer; }
+    .reset-button:hover { background:#eef5ff; border-color:#8bb8ff; }
+    @media (max-width: 920px) {
+      .layout { grid-template-columns:minmax(0,1fr) 330px; }
+      .right-panel { padding-left:14px; padding-right:14px; }
+      .preview-pane { padding-left:14px; padding-right:14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="titlebar">
+      <div class="brand-mark">丹</div>
+      <div class="brand-name">字体变形-丹</div>
+      <div class="brand-sub">VECTOR TYPE WARP</div>
+    </header>
+    <main class="layout">
+      <section class="preview-pane">
+        <div class="preview-header">
+          <span class="preview-title">实时预览 · 拖动控制点调整字形</span>
+          <span class="live-tag"><i class="live-dot"></i>实时更新</span>
+        </div>
+        <div id="stage" class="stage">
+          <svg id="previewSvg" viewBox="0 0 1000 650" aria-label="字体变形实时预览">
+            <g id="shapeGroup"></g>
+            <rect id="selectionBox" class="selection-box" rx="5"></rect>
+            <g id="cornerHandles">
+              <circle class="corner-handle" data-index="0" r="8"></circle>
+              <circle class="corner-handle" data-index="1" r="8"></circle>
+              <circle class="corner-handle" data-index="2" r="8"></circle>
+              <circle class="corner-handle" data-index="3" r="8"></circle>
+            </g>
+          </svg>
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon">字</div>
+            <strong>选中文字，开始预览变形</strong>
+            <small>原文字会保持不变，导出时才生成矢量</small>
+          </div>
+        </div>
+        <div class="stage-hint"><span>拖动四角手柄可微调字形 · 预览不会改动画布</span><span id="sourceName"></span></div>
+      </section>
+      <aside class="right-panel">
+        <div class="panel-brand">
+          <div class="panel-logo">丹</div>
+          <div><h1>字体变形-丹</h1><div class="subtitle">VECTOR TYPE WARP</div></div>
+        </div>
+        <div id="selectionStatus" class="selection-status invalid">请在画布中选中一个文字图层</div>
+        <div class="section-head"><strong>变形形状</strong><small>选择一种效果</small></div>
+        <div id="presetGrid" class="preset-grid"></div>
+        <button id="restoreButton" class="reset-button" type="button">�ָ�ԭʼ�֥�</button>
+        <section id="curveEditor" class="curve-editor">
+          <div class="curve-head"><strong>自定义曲线</strong><small>拖动 5 个点调整轮廓</small></div>
+          <svg id="curveSvg" viewBox="0 0 300 100" aria-label="自定义变形曲线">
+            <line class="guide" x1="20" y1="50" x2="280" y2="50"></line>
+            <line class="guide" x1="20" y1="10" x2="20" y2="90"></line>
+            <line class="guide" x1="280" y1="10" x2="280" y2="90"></line>
+            <path id="curvePath" class="curve-path" d=""></path>
+            <g id="curveHandles">
+              <circle class="curve-handle" data-index="0" r="5"></circle>
+              <circle class="curve-handle" data-index="1" r="5"></circle>
+              <circle class="curve-handle" data-index="2" r="5"></circle>
+              <circle class="curve-handle" data-index="3" r="5"></circle>
+              <circle class="curve-handle" data-index="4" r="5"></circle>
+            </g>
+          </svg>
+        </section>
+        <div class="controls">
+          <div class="section-head"><strong>变形强度</strong><small>控制弯曲幅度</small></div>
+          <div class="control-line">
+            <label for="strength">强度</label>
+            <input id="strength" type="range" min="0" max="100" value="50">
+            <span id="strengthValue" class="num">50%</span>
+          </div>
+          <div class="checks">
+            <label class="check"><input id="smooth" type="checkbox" checked><span>平滑曲线</span></label>
+          </div>
+          <div class="stroke-line">
+            <label for="strokeWidth">描边</label>
+            <input id="strokeWidth" type="number" min="0" max="20" step="0.5" value="0">
+            <input id="strokeColor" type="color" value="#111111" aria-label="描边颜色">
+          </div>
+          <label class="check hide-original"><input id="hideOriginal" type="checkbox" checked><span>导出后隐藏原文字（仍可编辑）</span></label>
+          <div class="divider"></div>
+          <div id="status" class="status">选择形状或拖动左侧控制点进行调整</div>
+          <button id="exportButton" class="export-button" disabled>导出矢量字到画布</button>
+          <div class="footnote">导出后生成可继续编辑节点的矢量图层</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const post = function (message) { parent.postMessage({ pluginMessage: message }, "*"); };
+    const presets = [
+      { id: "arch-up", name: "上拱", path: "M4 26 Q22 2 40 26" },
+      { id: "arch-down", name: "下弧", path: "M4 7 Q22 31 40 7" },
+      { id: "bulge", name: "外鼓", path: "M6 8 Q22 28 38 8 M6 27 Q22 7 38 27" },
+      { id: "pinch", name: "内收", path: "M6 8 Q22 28 38 8 M6 27 Q22 7 38 27" },
+      { id: "wave", name: "波浪", path: "M3 18 C10 4 16 4 22 18 S34 32 41 18" },
+      { id: "flag", name: "飘旗", path: "M5 6 Q23 13 39 5 L37 28 Q20 19 6 29 Z" },
+      { id: "slant", name: "斜切", path: "M8 28 L15 7 L39 7 L32 28 Z" },
+      { id: "perspective", name: "透视", path: "M8 8 L37 13 L37 25 L8 30 Z" },
+      { id: "custom", name: "自定义", path: "M4 22 C12 6 18 30 27 15 S37 11 40 18" }
+    ];
+
+    const grid = document.getElementById("presetGrid");
+    const statusEl = document.getElementById("status");
+    const exportButton = document.getElementById("exportButton");
+    const shapeGroup = document.getElementById("shapeGroup");
+    const selectionBox = document.getElementById("selectionBox");
+    const handlesGroup = document.getElementById("cornerHandles");
+    const curveValues = [0, 0, 0, 0, 0];
+    const manualValues = [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}];
+    let effect = "none";
+    let strength = 0;
+    let smooth = true;
+    let outlineData = null;
+    let previewData = null;
+    let canExport = false;
+    let selectedId = null;
+    let exportBusy = false;
+    let exportTimer = null;
+    let previewRevision = 0;
+    let previewFrame = 0;
+    let fitScale = 1;
+    let baseBounds = null;
+    let previewBounds = null;
+    let dragState = null;
+    let lastView = {tx:0,ty:0,scale:1};
+
+    // Opening the plugin starts in the untouched, original text state.
+    document.getElementById("hideOriginal").checked = false;
+    document.getElementById("restoreButton").textContent = "\u6062\u590d\u539f\u59cb\u5b57\u4f53";
+    document.getElementById("strengthValue").textContent = "0%";
+    document.getElementById("strength").value = "0";
+
+    presets.forEach(function (preset) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "preset" + (preset.id === effect ? " active" : "");
+      button.dataset.effect = preset.id;
+      button.innerHTML = "<svg viewBox='0 0 44 34' aria-hidden='true'><path d='" + preset.path + "' fill='rgba(62,130,246,.15)' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'></path></svg><span>" + preset.name + "</span>";
+      button.addEventListener("click", function () {
+        effect = preset.id;
+        if (strength === 0) {
+          strength = 50;
+          document.getElementById("strength").value = "50";
+          document.getElementById("strengthValue").textContent = "50%";
+        }
+        Array.from(grid.children).forEach(function (child) { child.classList.toggle("active", child.dataset.effect === effect); });
+        document.getElementById("curveEditor").classList.toggle("show", effect === "custom");
+        requestPreview();
+      });
+      grid.appendChild(button);
+    });
+
+    function currentSettings() {
+      return {
+        effect: effect,
+        strength: strength,
+        smooth: smooth,
+        custom: curveValues.slice(),
+        manual: manualValues.map(function (point) { return {x:point.x,y:point.y}; }),
+        strokeWidth: Math.max(0, Math.min(20, Number(document.getElementById("strokeWidth").value) || 0)),
+        strokeColor: document.getElementById("strokeColor").value,
+        hideOriginal: document.getElementById("hideOriginal").checked
+      };
+    }
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+    function profileValue(x, values) {
+      const count = values.length;
+      const scaled = clamp(x, 0, 1) * (count - 1);
+      const index = Math.min(count - 2, Math.floor(scaled));
+      const t = scaled - index;
+      const p1 = values[index];
+      const p2 = values[index + 1];
+      if (!smooth) return p1 + (p2 - p1) * t;
+      const p0 = values[Math.max(0, index - 1)];
+      const p3 = values[Math.min(count - 1, index + 2)];
+      const t2 = t * t;
+      const t3 = t2 * t;
+      return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+    }
+
+    function getBounds(network) {
+      const points = [];
+      network.vertices.forEach(function (vertex) { points.push({x:vertex.x,y:vertex.y}); });
+      (network.segments || []).forEach(function (segment) {
+        if (segment.tangentStart) {
+          const point = network.vertices[segment.start];
+          points.push({x:point.x + segment.tangentStart.x,y:point.y + segment.tangentStart.y});
+        }
+        if (segment.tangentEnd) {
+          const point = network.vertices[segment.end];
+          points.push({x:point.x + segment.tangentEnd.x,y:point.y + segment.tangentEnd.y});
+        }
+      });
+      return points.reduce(function (box, point) {
+        return {minX:Math.min(box.minX,point.x),minY:Math.min(box.minY,point.y),maxX:Math.max(box.maxX,point.x),maxY:Math.max(box.maxY,point.y)};
+      }, {minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity});
+    }
+
+    function colorCss(paint) {
+      if (!paint || !paint.color) return "#111111";
+      const c = paint.color;
+      const r = Math.round(c.r*255);
+      const g = Math.round(c.g*255);
+      const b = Math.round(c.b*255);
+      return "rgb(" + r + "," + g + "," + b + ")";
+    }
+
+    function paintForRegion(region) {
+      const list = (region && region.fills && region.fills.length) ? region.fills : (outlineData && outlineData.fills) || [];
+      for (let i=0;i<list.length;i++) {
+        if (list[i].type === "SOLID" && list[i].visible !== false) return list[i];
+      }
+      return null;
+    }
+
+    function pointAt(network,index) { return network.vertices[index]; }
+
+    function loopPath(indices,network) {
+      if (!indices.length) return "";
+      function attempt(reverseFirst) {
+        const first = network.segments[indices[0]];
+        let startIndex = reverseFirst ? first.end : first.start;
+        let currentIndex = startIndex;
+        let d = "M " + pointAt(network,startIndex).x + " " + pointAt(network,startIndex).y;
+        for (let i=0;i<indices.length;i++) {
+          const segment = network.segments[indices[i]];
+          let forward;
+          if (segment.start === currentIndex) forward = true;
+          else if (segment.end === currentIndex) forward = false;
+          else return "";
+          const fromIndex = forward ? segment.start : segment.end;
+          const toIndex = forward ? segment.end : segment.start;
+          const from = pointAt(network,fromIndex);
+          const to = pointAt(network,toIndex);
+          const tangentFrom = forward ? segment.tangentStart : segment.tangentEnd;
+          const tangentTo = forward ? segment.tangentEnd : segment.tangentStart;
+          const c1 = tangentFrom ? {x:from.x+tangentFrom.x,y:from.y+tangentFrom.y} : from;
+          const c2 = tangentTo ? {x:to.x+tangentTo.x,y:to.y+tangentTo.y} : to;
+          const curved = tangentFrom || tangentTo;
+          if (curved) d += " C " + c1.x + " " + c1.y + " " + c2.x + " " + c2.y + " " + to.x + " " + to.y;
+          else d += " L " + to.x + " " + to.y;
+          currentIndex = toIndex;
+        }
+        return currentIndex === startIndex ? d + " Z" : "";
+      }
+      return attempt(false) || attempt(true);
+    }
+
+    function renderCurve() {
+      const pts = curveValues.map(function (value,index) { return {x:20+index*65,y:50-value*37}; });
+      let d = "M " + pts[0].x + " " + pts[0].y;
+      for (let i=0;i<pts.length-1;i++) {
+        if (!smooth) {
+          d += " L " + pts[i+1].x + " " + pts[i+1].y;
+        } else {
+          const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(pts.length-1,i+2)];
+          d += " C " + (p1.x+(p2.x-p0.x)/6) + " " + (p1.y+(p2.y-p0.y)/6) + " " +
+            (p2.x-(p3.x-p1.x)/6) + " " + (p2.y-(p3.y-p1.y)/6) + " " + p2.x + " " + p2.y;
+        }
+      }
+      document.getElementById("curvePath").setAttribute("d",d);
+      const circles=Array.from(document.querySelectorAll(".curve-handle"));
+      circles.forEach(function(circle,index){circle.setAttribute("cx",pts[index].x);circle.setAttribute("cy",pts[index].y);});
+    }
+
+    function svgPoint(event,svg) {
+      const point=svg.createSVGPoint();
+      point.x=event.clientX;
+      point.y=event.clientY;
+      const matrix=svg.getScreenCTM();
+      const local=matrix?point.matrixTransform(matrix.inverse()):{x:0,y:0};
+      return {x:local.x,y:local.y};
+    }
+
+    function paintNetwork(network,transform) {
+      const group=document.getElementById("shapeGroup");
+      const parts=[];
+      (network.regions||[]).forEach(function(region){
+        const paths=(region.loops||[]).map(function(loop){return loopPath(loop,network);}).filter(Boolean);
+        if (!paths.length) return;
+        const paint=paintForRegion(region);
+        const fill=paint ? colorCss(paint) : "#17191d";
+        const opacity=paint && paint.opacity!==undefined ? paint.opacity : 1;
+        parts.push("<path d='" + paths.join(" ") + "' fill='" + fill + "' fill-opacity='" + opacity + "' fill-rule='" + (region.windingRule==="EVENODD"?"evenodd":"nonzero") + "'></path>");
+      });
+      group.innerHTML=parts.join("");
+      group.setAttribute("transform","translate("+transform.tx+" "+transform.ty+") scale("+transform.scale+")");
+      if (!parts.length) return false;
+      return true;
+    }
+
+    function requestPreview() {
+      if (!outlineData || !outlineData.network || !selectedId) return;
+      if (previewFrame) return;
+      previewFrame = requestAnimationFrame(function () {
+        previewFrame = 0;
+        previewRevision += 1;
+        post({type:"preview-settings",sourceId:selectedId,revision:previewRevision,settings:currentSettings()});
+      });
+    }
+
+    function renderPreview() {
+      const data=previewData || outlineData;
+      if (!data || !data.network) return;
+      const settings=currentSettings();
+      const network=data.network;
+      const bounds=getBounds(network);
+      const width=Math.max(1,bounds.maxX-bounds.minX);
+      const height=Math.max(1,bounds.maxY-bounds.minY);
+      const draggingCorner = dragState && dragState.kind === "corner";
+      const autoScale=Math.max(0.08,Math.min(Math.min(820/width,480/height),8));
+      // Keep the viewport fixed while dragging; re-fitting on each pointermove
+      // makes the handle jump away from the cursor.
+      const renderScale=draggingCorner ? dragState.view.scale : autoScale;
+      fitScale=renderScale;
+      const tx=draggingCorner ? dragState.view.tx : (1000-width*renderScale)/2-bounds.minX*renderScale;
+      const ty=draggingCorner ? dragState.view.ty : (650-height*renderScale)/2-bounds.minY*renderScale;
+      lastView={tx:tx,ty:ty,scale:renderScale};
+      previewBounds=bounds;
+      baseBounds=getBounds(outlineData.network);
+      const hasPath=paintNetwork(network,{tx:tx,ty:ty,scale:renderScale});
+      document.getElementById("emptyState").style.display=hasPath?"none":"grid";
+      selectionBox.setAttribute("x",bounds.minX);
+      selectionBox.setAttribute("y",bounds.minY);
+      selectionBox.setAttribute("width",width);
+      selectionBox.setAttribute("height",height);
+      selectionBox.setAttribute("transform","translate("+tx+" "+ty+") scale("+renderScale+")");
+      const cornerPoints=[
+        {x:bounds.minX,y:bounds.minY},
+        {x:bounds.maxX,y:bounds.minY},
+        {x:bounds.maxX,y:bounds.maxY},
+        {x:bounds.minX,y:bounds.maxY}
+      ];
+      Array.from(handlesGroup.children).forEach(function(circle,index){
+        circle.setAttribute("cx",cornerPoints[index].x);
+        circle.setAttribute("cy",cornerPoints[index].y);
+        circle.setAttribute("r",8/renderScale);
+        circle.setAttribute("transform","translate("+tx+" "+ty+") scale("+renderScale+")");
+      });
+      const strokeWidth=settings.strokeWidth>0?settings.strokeWidth:0;
+      Array.from(shapeGroup.children).forEach(function(path){
+        path.setAttribute("stroke",strokeWidth>0?settings.strokeColor:"none");
+        path.setAttribute("stroke-width",strokeWidth);
+        path.setAttribute("stroke-linejoin","round");
+        path.setAttribute("stroke-linecap","round");
+      });
+      document.getElementById("sourceName").textContent=data.name||outlineData.name||"";
+      exportButton.disabled=exportBusy || !canExport;
+    }
+
+    function setStatus(message,kind) {
+      statusEl.textContent=message;
+      statusEl.className="status"+(kind?" "+kind:"");
+    }
+
+    function updateCustomPoint(index,event,svg) {
+      const rect=svg.getBoundingClientRect();
+      const y=(event.clientY-rect.top)/rect.height*100;
+      curveValues[index]=clamp((50-y)/37,-1,1);
+      renderCurve();
+      requestPreview();
+    }
+
+    const curveSvg=document.getElementById("curveSvg");
+    const previewSvg=document.getElementById("previewSvg");
+    function clearDrag() {
+      if (!dragState) return;
+      if (dragState.element) dragState.element.classList.remove("dragging");
+      dragState=null;
+      requestPreview();
+    }
+    function beginCurveDrag(index,event,circle) {
+      event.preventDefault();
+      event.stopPropagation();
+      dragState={kind:"curve",index:index,pointerId:event.pointerId,element:circle};
+      circle.classList.add("dragging");
+      if (circle.setPointerCapture) { try { circle.setPointerCapture(event.pointerId); } catch (error) {} }
+    }
+    function beginCornerDrag(index,event,circle) {
+      if (!baseBounds) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const point=svgPoint(event,previewSvg);
+      const width=Math.max(1,baseBounds.maxX-baseBounds.minX);
+      const height=Math.max(1,baseBounds.maxY-baseBounds.minY);
+      dragState={kind:"corner",index:index,pointerId:event.pointerId,element:circle,
+        startX:point.x,startY:point.y,initialX:manualValues[index].x,initialY:manualValues[index].y,
+        width:width,height:height,view:{tx:lastView.tx,ty:lastView.ty,scale:lastView.scale}};
+      circle.classList.add("dragging");
+      if (circle.setPointerCapture) { try { circle.setPointerCapture(event.pointerId); } catch (error) {} }
+    }
+    Array.from(document.querySelectorAll(".curve-handle")).forEach(function(circle){
+      const index=Number(circle.dataset.index);
+      circle.addEventListener("pointerdown",function(event){beginCurveDrag(index,event,circle);});
+    });
+    Array.from(document.querySelectorAll(".corner-handle")).forEach(function(circle){
+      const index=Number(circle.dataset.index);
+      circle.addEventListener("pointerdown",function(event){beginCornerDrag(index,event,circle);});
+    });
+    window.addEventListener("pointermove",function(event){
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      if (dragState.kind === "curve") {
+        updateCustomPoint(dragState.index,event,curveSvg);
+        return;
+      }
+      if (dragState.kind === "corner") {
+        const point=svgPoint(event,previewSvg);
+        manualValues[dragState.index].x=clamp(dragState.initialX+(point.x-dragState.startX)/(dragState.view.scale*dragState.width),-2,2);
+        manualValues[dragState.index].y=clamp(dragState.initialY+(point.y-dragState.startY)/(dragState.view.scale*dragState.height),-2,2);
+        requestPreview();
+      }
+    },{passive:false});
+    window.addEventListener("pointerup",function(event){if (dragState && dragState.pointerId === event.pointerId) clearDrag();});
+    window.addEventListener("pointercancel",function(event){if (dragState && dragState.pointerId === event.pointerId) clearDrag();});
+    window.addEventListener("blur",clearDrag);
+
+    document.getElementById("strength").addEventListener("input",function(event){
+      strength=Number(event.target.value);
+      document.getElementById("strengthValue").textContent=strength+"%";
+      requestPreview();
+    });
+    document.getElementById("smooth").addEventListener("change",function(event){
+      smooth=event.target.checked;
+      renderCurve();
+      requestPreview();
+    });
+    ["strokeWidth","strokeColor","hideOriginal"].forEach(function(id){
+      document.getElementById(id).addEventListener("input",renderPreview);
+      document.getElementById(id).addEventListener("change",renderPreview);
+    });
+    document.getElementById("exportButton").addEventListener("click",function(){
+      if(!canExport || exportBusy) return;
+      exportBusy=true;
+      exportButton.disabled=true;
+      exportButton.textContent="导出中…";
+      setStatus("正在生成可编辑矢量字…","");
+       post({type:"apply",settings:currentSettings()});
+       if(exportTimer) clearTimeout(exportTimer);
+       exportTimer=setTimeout(function(){
+         if(!exportBusy)return;
+         exportBusy=false;
+         exportButton.textContent="导出矢量字到画布";
+         exportButton.disabled=!canExport;
+         setStatus("导出响应超时，请重试；原文字未被修改","error");
+       },12000);
+    });
+    document.getElementById("restoreButton").addEventListener("click",function(){
+      effect="none";
+      strength=0;
+      smooth=true;
+      curveValues.splice(0,curveValues.length,0,0,0,0,0);
+      manualValues.forEach(function(point){point.x=0;point.y=0;});
+      document.getElementById("strength").value="0";
+      document.getElementById("strengthValue").textContent="0%";
+      document.getElementById("smooth").checked=true;
+      Array.from(grid.children).forEach(function(child){child.classList.remove("active");});
+      document.getElementById("curveEditor").classList.remove("show");
+      renderCurve();
+       requestPreview();
+       post({type:"restore-original"});
+    });
+
+    window.onmessage=function(event){
+      const message=event.data&&event.data.pluginMessage;
+      if(!message)return;
+      if(message.type==="selection"){
+        const data=message.payload||{};
+        const status=document.getElementById("selectionStatus");
+        status.textContent=data.message||"请在画布中选中一个文字图层";
+        status.classList.toggle("invalid",!data.valid);
+        if(!data.valid){
+          selectedId=null;
+           outlineData=null;
+           previewData=null;
+          canExport=false;
+        } else if(selectedId!==data.id){
+          selectedId=data.id;
+          outlineData=null;
+           previewData=null;
+          shapeGroup.innerHTML="";
+          document.getElementById("sourceName").textContent="";
+          document.getElementById("emptyState").style.display="grid";
+          canExport=false;
+        }
+         if(!exportBusy) exportButton.textContent="导出矢量字到画布";
+        exportButton.disabled=exportBusy || !canExport;
+        if(!data.valid&&!outlineData){
+          document.getElementById("emptyState").style.display="grid";
+          setStatus("选中文字后即可查看实时预览","");
+         } else if(data.valid){
+           setStatus("实时预览已就绪，可拖动左侧四角控制点","");
+           if(!outlineData) post({type:"request-outline"});
+        }
+      }
+      if(message.type==="outline"){
+        if(selectedId&&message.payload&&message.payload.sourceId!==selectedId)return;
+         outlineData=message.payload;
+         previewData=message.payload;
+        canExport=Boolean(outlineData&&outlineData.network&&outlineData.network.vertices.length);
+        document.getElementById("emptyState").style.display="none";
+         renderPreview();
+         requestPreview();
+        setStatus("实时预览已就绪，可拖动左侧四角控制点","");
+      }
+       if(message.type==="preview"){
+         const data=message.payload||{};
+         if(selectedId&&data.sourceId!==selectedId)return;
+         if(data.revision && data.revision<previewRevision)return;
+         previewData=data;
+         renderPreview();
+       }
+       if(message.type==="outline-error"){
+         const data=message.payload||{};
+         if(selectedId&&data.sourceId&&data.sourceId!==selectedId)return;
+         canExport=false;
+         setStatus(data.message||"无法读取文字轮廓，请重新选择文字","error");
+       }
+      if(message.type==="status"){
+        const data=message.payload||{};
+        setStatus(data.message||"已完成",data.kind||"");
+        // Keep exporting available after success so the user can create
+        // another variation without reopening the plugin.
+         if(exportTimer){clearTimeout(exportTimer);exportTimer=null;}
+         exportBusy=false;
+        exportButton.textContent="导出矢量字到画布";
+        exportButton.disabled=exportBusy || !canExport;
+      }
+    };
+
+    renderCurve();
+    post({type:"ready"});
+    new ResizeObserver(function(){
+      post({type:"resize",height:Math.max(620,Math.ceil(document.querySelector(".app").getBoundingClientRect().height))});
+    }).observe(document.querySelector(".app"));
+  </script>
+</body>
+</html>

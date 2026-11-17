@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>字体变形-丹｜安装与使用说明</title>
+  <style>
+    :root{--blue:#3979ee;--ink:#20242c;--muted:#697386;--line:#e4e8ef;--soft:#f5f8ff;--green:#168452;}
+    *{box-sizing:border-box} body{margin:0;background:#f4f6fa;color:var(--ink);font:15px/1.75 "Microsoft YaHei",Inter,Arial,sans-serif}
+    .page{max-width:960px;margin:36px auto;padding:0 22px 56px}.hero{padding:34px 38px;border-radius:20px;background:linear-gradient(135deg,#3979ee,#75a6ff);color:#fff;box-shadow:0 14px 34px #3979ee2b}
+    .mark{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#ffffff2b;font-size:24px;font-weight:800;vertical-align:middle;margin-right:12px}.hero h1{display:inline;font-size:28px;vertical-align:middle}.hero p{margin:16px 0 0;color:#eef4ff}.version{display:inline-block;margin-top:18px;padding:3px 10px;border-radius:99px;background:#fff;color:var(--blue);font-size:12px;font-weight:700}
+    .card{margin-top:20px;padding:26px 30px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 5px 18px #27364c0b}.card h2{margin:0 0 12px;font-size:20px}.card h3{margin:20px 0 7px;font-size:16px}.step{display:flex;gap:14px;margin:12px 0}.num{flex:0 0 29px;height:29px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-weight:700}.step p{margin:0}.note{padding:13px 16px;border-left:4px solid var(--blue);background:var(--soft);color:#40516e;border-radius:8px}.success{border-left-color:var(--green);background:#eefaf4;color:#256647}code{padding:2px 6px;border-radius:5px;background:#eef1f5;color:#303b4e;font-family:Consolas,monospace}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.flow div{padding:14px 10px;text-align:center;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}.flow b{display:block;color:var(--blue);font-size:13px;margin-bottom:4px}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}@media(max-width:700px){.page{margin:18px auto;padding:0 12px}.hero,.card{padding:22px 18px}.flow{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="mark">丹</span><h1>字体变形-丹</h1>
+      <p>Figma 文字转矢量与字体变形插件。本文档包含安装、使用、导出和常见问题说明。</p>
+      <span class="version">当前版本 v5.2.0</span>
+    </section>
+
+    <section class="card">
+      <h2>一、安装插件</h2>
+      <div class="step"><span class="num">1</span><p>下载项目 ZIP，并解压到一个固定文件夹。建议文件夹路径只使用英文和数字，例如 <code>D:\figma-type-warp-dan</code>。</p></div>
+      <div class="step"><span class="num">2</span><p>打开 Figma 桌面端，进入一个具有编辑权限的 Design 文件。</p></div>
+      <div class="step"><span class="num">3</span><p>打开菜单 <b>Plugins → Development → Import plugin from manifest…</b>。</p></div>
+      <div class="step"><span class="num">4</span><p>进入解压后的项目文件夹，选择根目录中的 <code>manifest.json</code>。</p></div>
+      <div class="step"><span class="num">5</span><p>在画布中选中一个文字图层，打开 <b>Plugins → Development → 字体变形-丹</b>。</p></div>
+      <div class="note success">如果之前安装过旧版，请先关闭旧插件，再从新版文件夹重新导入 manifest.json，避免 Figma 继续运行旧目录中的代码。</div>
+    </section>
+
+    <section class="card">
+      <h2>二、基本使用</h2>
+      <div class="flow"><div><b>01 选择文字</b>在画布中选中 TEXT 图层</div><div><b>02 选择形状</b>点击右侧变形效果</div><div><b>03 调整预览</b>拖动四角或修改强度</div><div><b>04 导出</b>生成可编辑矢量</div></div>
+      <h3>调整方式</h3>
+      <ul>
+        <li>右侧选择上拱、下弧、外鼓、内收、波浪、飘旗、斜切或透视。</li>
+        <li>使用“自定义”可以拖动 5 个曲线控制点。</li>
+        <li>左侧预览区的四角控制点可以进行自由微调。</li>
+        <li>预览不会修改画布中的原文字。</li>
+      </ul>
+      <h3>导出结果</h3>
+      <p>点击“导出矢量字到画布”后，插件会在原文字右侧创建独立矢量图层。矢量图层可以在 Figma 中继续移动、缩放和编辑。</p>
+      <p>默认保留原文字；勾选“导出后隐藏原文字”可以隐藏原文字，但不会删除它。点击“恢复原始字体”可以再次显示原文字。</p>
+    </section>
+
+    <section class="card">
+      <h2>三、常见问题</h2>
+      <h3>导出按钮没有反应</h3>
+      <ol><li>确认画布中当前选中的是文字图层，而不是已经转好的矢量。</li><li>关闭插件后，重新点击画布中的原始文字，再打开插件。</li><li>确认使用的是 v5.2.0，并从新版文件夹重新导入 manifest.json。</li><li>组件实例内部文字暂不支持，请先复制到普通画布。</li></ol>
+      <h3>提示“请重新选择原始文字后再导出”</h3>
+      <p>请先关闭插件，再在画布中重新点击原始文字图层，然后重新打开插件。不要只点击插件左侧预览中的文字。</p>
+      <h3>导出后找不到矢量</h3>
+      <p>结果默认放在原文字右侧，并且保持在原文字的同级父级中。可以在图层面板中查找名称带“（矢量）”的图层。</p>
+      <h3>哪些情况暂不支持？</h3>
+      <p>当前版本一次处理一个普通文字图层，不支持组件实例内部的文字；插件需要在 Figma 桌面端的可编辑 Design 文件中运行。</p>
+    </section>
+
+    <section class="card">
+      <h2>四、开发与测试</h2>
+      <p>本项目不依赖第三方 npm 包。项目根目录提供 <code>package.json</code>，可运行：</p>
+      <pre><code>npm run check
+npm test</code></pre>
+      <p>测试文件位于 <code>tests/test-harness.js</code>，用于验证变形、连续导出、自动布局、临时节点清理和选区状态恢复。</p>
+    </section>
+
+    <section class="card">
+      <h2>五、开源说明</h2>
+      <p>项目采用 MIT License。欢迎提交 Issue 和 Pull Request，但请不要上传客户设计稿、商业字体文件、个人信息或未授权素材。</p>
+    </section>
+    <div class="footer">字体变形-丹 · Vector Type Warp · v5.2.0</div>
+  </main>
+</body>
+</html>
